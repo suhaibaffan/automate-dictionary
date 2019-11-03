@@ -1,8 +1,18 @@
 const inquirer = require( 'inquirer' );
-const figlet = require( 'figlet' );
 const chalk = require( 'chalk' );
-const { getDefinitions, getWordOfTheDay } = require( './automate' );
+const Spinner = require( 'cli-spinner' ).Spinner;
+const { getDefinitions, getWordOfTheDay, getSynonyms, examplesOfTheWord } = require( './automate' );
+
 const log = console.log;
+const spinner = new Spinner({
+    text: '',
+    stream: process.stderr,
+    onTick: function( msg ){
+        this.clearLine( this.stream );
+        this.stream.write( msg );
+    }
+});
+spinner.setSpinnerString( '⠋⠙⠚⠞⠖⠦⠴⠲⠳⠓' );
 
 async function main () {
     const actions = [ 'Definitions', 'Synonyms', 'Antonyms', 'Examples', 'Dictionary', 'Word of the day', 'Word Game' ]
@@ -16,7 +26,9 @@ async function main () {
     ]);
 
     let input;
-    if ( actions.indexOf( action ) === 5 ) {
+    const actionIndex = actions.indexOf( action );
+    if ( actionIndex === 5 ) {
+        spinner.start();
         const wordOfTheDay = await getWordOfTheDay();
         input = wordOfTheDay;
     } else {
@@ -24,7 +36,7 @@ async function main () {
             {
                 type: 'input',
                 name: 'word',
-                message: `Enter a valid word for getting the ${ actions[actions.indexOf( action ) ]}`,
+                message: `Enter a valid word for getting the ${ actions[ actionIndex ]}`,
                 validate: result => {
                     if ( result.length <= 3 )
                         return 'Not a valid word.';
@@ -36,20 +48,50 @@ async function main () {
                 }
             }
         ]);
+        spinner.start();
         input = word
     }
-    const definitions = await getDefinitions( input )
+    log( chalk.blue.underline.bold( action,': ',input ) );
 
-    log( chalk.blue.underline.bold( action,':' ) );
-    
-    figlet( input, ( err, data ) => {
-        log( chalk.yellow( data ) );
-        for ( let define of definitions ) {
-            log( chalk.green( define.text ) );
+    switch ( actionIndex ) {
+        case 0: {
+            await getDefinitions( input );
+            break;
         }
-    });
+        case 1: {
+            await getSynonyms( input, true );
+            break;
+        }
+        case 2: {
+            await getSynonyms( input, false );
+            break;
+        }
+        case 3: {
+            await examplesOfTheWord( input );
+            break;
+        }
+        case 4: {
+            await getDefinitions( input );
+            await getSynonyms( input, true );
+            await getSynonyms( input, false );
+            await examplesOfTheWord( input );
+            break;
+        }
+        case 5: {
+            await getDefinitions( input );
+            await getSynonyms( input, true );
+            await getSynonyms( input, false );
+            await examplesOfTheWord( input );
+            break;
+        }
+    }
+
+    spinner.stop();
 }
 
 main().catch( err => {
     console.log( err );
+    log( chalk.red.bold( 'Something went wrong, try again.' ) );
+    spinner.stop();
+    main();
 });
