@@ -1,0 +1,24 @@
+{
+  "name": "automate-dictionary",
+  "version": "1.0.0",
+  "description": "Command Line Dictionary Tool",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/init.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suhaibaffan/automate-dictionary.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/suhaibaffan/automate-dictionary/issues"
+  },
+  "homepage": "https://github.com/suhaibaffan/automate-dictionary#readme",
+  "dependencies": {
+    "inquirer": "^7.0.0"
+  }
+}
