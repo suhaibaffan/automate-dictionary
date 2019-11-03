@@ -11,12 +11,16 @@ const relatedWords = word => `word/${word}/relatedWords?api_key=`;
 const randomPath = 'words/randomWord?api_key=';
 
 
-module.exports.getDefinitions = async function getDefinitions ( word ) {
+module.exports.getDefinitions = async function getDefinitions ( word, dontLog = false ) {
     try {
         const response = await axios.get( `${API_HOST}/${definitionsPath( word )}${API_KEY}`);
     
         if ( !response ) return false;
+
+        if ( dontLog ) return response.data;
+
         await logData( 'Definitions:', response.data );
+        return response.data;
     } catch ( err ) {
         await logData( 'Definitions:', []);
     }
@@ -42,12 +46,14 @@ module.exports.examplesOfTheWord = async function examplesOfTheWord ( word ) {
     }
 }
 
-module.exports.getSynonyms = async function getSynonyms ( word, synonym ) {
+module.exports.getSynonyms = async function getSynonyms ( word, synonym, dontLog = false ) {
     try {
         const { data } = await axios.get( `${API_HOST}/${relatedWords( word )}${API_KEY}`);
         
         if ( synonym ) {
             const type = data.map( value => value.relationshipType ).indexOf( 'synonym' )
+
+            if ( dontLog ) return data[type].words;
 
             await logData( 'Synonyms:', data[type] ? data[type].words: []);
             return;

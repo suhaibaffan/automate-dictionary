@@ -15,7 +15,7 @@ const spinner = new Spinner({
 spinner.setSpinnerString( '⠋⠙⠚⠞⠖⠦⠴⠲⠳⠓' );
 
 async function main () {
-    const actions = [ 'Definitions', 'Synonyms', 'Antonyms', 'Examples', 'Dictionary', 'Word of the day', 'Word Game' ]
+    const actions = [ 'Definitions', 'Synonyms', 'Antonyms', 'Examples', 'Dictionary', 'Word of the day', 'Play' ]
     const { action } = await inquirer.prompt([
         {
             type: 'list',
@@ -27,7 +27,7 @@ async function main () {
 
     let input;
     const actionIndex = actions.indexOf( action );
-    if ( actionIndex === 5 ) {
+    if ( actionIndex === 5 || actionIndex === 6 ) {
         spinner.start();
         const wordOfTheDay = await getWordOfTheDay();
         input = wordOfTheDay;
@@ -51,7 +51,11 @@ async function main () {
         spinner.start();
         input = word
     }
-    log( chalk.blue.underline.bold( action,': ',input ) );
+    if ( actionIndex !== 6 )
+        log( chalk.blue.underline.bold( action,': ',input ) );
+
+    let definitions;
+    let synonyms;
 
     switch ( actionIndex ) {
         case 0: {
@@ -84,14 +88,83 @@ async function main () {
             await examplesOfTheWord( input );
             break;
         }
+        case 6: {
+            definitions = await getDefinitions( input, true );
+            synonyms = await getSynonyms( input, true, true );
+            break;
+        }
     }
 
     spinner.stop();
+
+    if ( actionIndex === 6 ) {
+        let tries = 0;
+
+        await play( definitions, synonyms, input, tries ); 
+    }
+
+    const { again } = await inquirer.prompt([
+        {
+            type: 'confirm',
+            name: 'again',
+            message: 'Run again?',
+            default: false
+        }
+    ]);
+
+    if ( again ) {
+        main();
+        return;
+    }
+
+    log( chalk.red.bold( 'Byee.' ) );
 }
 
 main().catch( err => {
-    console.log( err );
     log( chalk.red.bold( 'Something went wrong, try again.' ) );
     spinner.stop();
     main();
 });
+
+async function play ( definitions, synonyms, answer, tries ) {
+    log( chalk.blue.bold( definitions[0].text ) );
+    const { word } = await inquirer.prompt([
+        {
+            type: 'input',
+            name: 'word',
+            message: 'Guess the word'
+        }
+    ]);
+
+    if ( synonyms.includes( word ) || word === answer ) {
+        log( chalk.green( 'Sucess!' ) );
+        return word;
+    } else {
+        const quit = await tryAgain( definitions, synonyms, answer, tries )
+        if ( quit ) {
+            log( chalk.blue( 'Answer: ' ), chalk.green.bold( answer ) );
+            await getDefinitions( answer );
+        }
+    }
+}
+
+async function tryAgain ( definitions, synonyms, answer, tries ) {
+    const { option } = await inquirer.prompt([
+        {
+            type: 'list',
+            name: 'option',
+            message: 'Wrong answer.',
+            choices: [ 'Try again', 'hint', 'quit' ]
+        }
+    ]);
+    if ( option === 'Try again' || option === 'hint' ) {
+        if ( option === 'hint' ) {
+            tries += 1;
+            log( chalk.blue.bold( definitions[tries].text ) );
+        }
+
+        await play( definitions, synonyms, answer, tries );
+        return;
+    }
+    return true;
+}
