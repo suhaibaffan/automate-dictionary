@@ -144,6 +144,9 @@ async function play ( definitions, synonyms, answer, tries ) {
         if ( quit ) {
             log( chalk.blue( 'Answer: ' ), chalk.green.bold( answer ) );
             await getDefinitions( answer );
+            await getSynonyms( answer, true );
+            await getSynonyms( answer, false );
+            await examplesOfTheWord( answer );
         }
     }
 }
